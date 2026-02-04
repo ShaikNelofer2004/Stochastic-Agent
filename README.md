@@ -67,7 +67,7 @@ Stochastic/
 The application checks follow a modular RAG (Retrieval-Augmented Generation) pipeline:
 
 ```mermaid
-graph TD
+flowchart TD
     subgraph Ingestion["1. Ingestion Layer"]
         PDF[PDF Docs] -->|PyMuPDF4LLM| Parse[Markdown Text]
         Parse -->|Recursive Splitter| Chunk[Text Chunks]
@@ -76,22 +76,23 @@ graph TD
 
     subgraph Storage["2. Storage Layer"]
         Vector -->|NumPy| Store[(Vector Store)]
-        Store <-->|Pickle| Disk[Disk Storage]
+        Store -.->|Pickle| Disk[Disk Storage]
     end
 
     subgraph Agent["3. Agentic Logic"]
         Query[User Query] --> Router{Router}
         Router -->|Local| Retrieve[Retrieval]
         Router -->|External| Web[Arxiv Search]
-        Retrieve <--> Store
+        Retrieve -->|Query| Store
+        Store -->|Context| Retrieve
         Retrieve --> Citation[Citation Engine]
         Citation --> LLM[Gemini LLM]
         Web --> LLM
     end
 
     subgraph App["4. Application Layer"]
-        User((User)) <-->|Streamlit| UI[Interface]
-        UI <--> Query
+        User((User)) -->|Streamlit| UI[Interface]
+        UI --> Query
         LLM --> UI
     end
 ```
