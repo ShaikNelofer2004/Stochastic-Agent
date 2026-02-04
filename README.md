@@ -47,5 +47,5 @@ A lightweight, enterprise-ready AI agent for Document Q&A, built with Python, St
 - **Frontend**: Streamlit
 - **Vector Store**: Custom `SimpleVectorStore` (NumPy)
 - **Embedding**: Gemini Text Embedding 004
-- **LLM**: Gemini 1.5 Flash
+- **LLM**: Gemini 3 Flash
 - **PDF Engine**: PyMuPDF4LLM

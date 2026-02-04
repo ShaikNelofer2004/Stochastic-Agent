@@ -69,43 +69,65 @@ def batch_embed_contents(notebook_contents: List[str], model: str = "models/text
         print(f"Error generating embeddings: {e}")
         return []
 
-def process_pdfs(pdf_paths: List[str], vector_store_path: str = "vector_store.pkl"):
+def process_pdfs(pdf_paths: List[str], vector_store_path: str = "vector_store.pkl", clear_existing: bool = True):
     """
     Main function to process PDFs, chunk them, embed, and save to vector store.
     """
-    store = SimpleVectorStore.load_from_disk(vector_store_path)
+    if clear_existing and os.path.exists(vector_store_path):
+        print(f"Clearing existing vector store at {vector_store_path}...")
+        if os.path.exists(vector_store_path):
+            os.remove(vector_store_path)
+        store = SimpleVectorStore()
+    else:
+        store = SimpleVectorStore.load_from_disk(vector_store_path)
     
     for path in pdf_paths:
         print(f"Processing {path}...")
         try:
-            # Extract text as Markdown (preserves structure/tables)
-            md_text = pymupdf4llm.to_markdown(path)
+            # Open the PDF file
+            import pymupdf
+            doc = pymupdf.open(path)
             
-            # Add basic source info to text (optional, but good for context)
-            source_header = f"Source Document: {os.path.basename(path)}\n\n"
-            md_text = source_header + md_text
+            all_chunks = []
+            all_metadatas = []
+            
+            # Iterate through each page
+            for page_num, page in enumerate(doc):
+                # Extract text as Markdown for this specific page
+                # pymupdf4llm can convert specific pages
+                md_text = pymupdf4llm.to_markdown(path, pages=[page_num])
+                
+                # Add basic source info to text
+                source_header = f"Source Document: {os.path.basename(path)} | Page: {page_num + 1}\n\n"
+                md_text = source_header + md_text
 
-            # Chunking
-            chunks = split_text_recursive(md_text)
-            print(f"  - Split into {len(chunks)} chunks.")
+                # Chunking
+                page_chunks = split_text_recursive(md_text)
+                
+                # Extend lists
+                all_chunks.extend(page_chunks)
+                # Add metadata for each chunk
+                for _ in page_chunks:
+                    all_metadatas.append({
+                        "source": os.path.basename(path),
+                        "page": page_num + 1
+                    })
+
+            print(f"  - Split {os.path.basename(path)} into {len(all_chunks)} chunks.")
             
             # Embeddings
-            # Gemini API has limits, so we might need to batch if too many chunks
-            batch_size = 50 # Safe batch size
+            batch_size = 50
             all_embeddings = []
             
-            for i in range(0, len(chunks), batch_size):
-                batch_chunks = chunks[i : i + batch_size]
+            for i in range(0, len(all_chunks), batch_size):
+                batch_chunks = all_chunks[i : i + batch_size]
                 embeddings = batch_embed_contents(batch_chunks)
                 all_embeddings.extend(embeddings)
-                
-            # Create Metadata
-            metadatas = [{"source": os.path.basename(path)} for _ in chunks]
             
             # Add to store
-            if len(all_embeddings) == len(chunks):
-                store.add_documents(chunks, all_embeddings, metadatas)
-                print(f"  - Added {len(chunks)} chunks to store.")
+            if len(all_embeddings) == len(all_chunks):
+                store.add_documents(all_chunks, all_embeddings, all_metadatas)
+                print(f"  - Added {len(all_chunks)} chunks to store.")
             else:
                 print(f"  - Error: Embedding count mismatch for {path}.")
                 

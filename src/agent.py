@@ -15,7 +15,7 @@ class DocumentAgent:
     def __init__(self, vector_store_path: str = "vector_store.pkl"):
         self.vector_store_path = vector_store_path
         self.store = SimpleVectorStore.load_from_disk(vector_store_path)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-3-flash-preview')
         self.chat_history = []
 
     def _get_embedding(self, text: str):
@@ -41,7 +41,8 @@ class DocumentAgent:
         for res in results:
              # Add citation info to the context
             source = res['metadata'].get('source', 'Unknown')
-            context_parts.append(f"--- SOURCE: {source} ---\n{res['text']}\n")
+            page = res['metadata'].get('page', 'N/A')
+            context_parts.append(f"--- SOURCE: {source} | PAGE: {page} ---\n{res['text']}\n")
             
         return "\n".join(context_parts)
 
@@ -69,13 +70,12 @@ class DocumentAgent:
     def ask(self, user_query: str) -> str:
         """
         Main entry point. Decides whether to use local documents, Arxiv, or general knowledge.
+        Abides by conversation history.
         """
-        # 1. Routing Logic (Simple Keyword/LLM based)
-        # We'll use a lightweight LLM call or heuristics to decide the tool.
-        # For efficiency, let's try a heuristic first: 
-        # If "find papers" or "search arxiv" in query -> Arxiv
-        # Else -> RAG
-        
+        # Append user query to history
+        self.chat_history.append({"role": "user", "content": user_query})
+
+        # 1. Routing Logic
         tool_use = "RAG"
         if "find papers" in user_query.lower() or "search arxiv" in user_query.lower() or "look up" in user_query.lower():
             tool_use = "ARXIV"
@@ -109,7 +109,7 @@ class DocumentAgent:
                 system_instruction = (
                     "You are an expert research assistant. "
                     "Use the provided Context from uploaded PDF documents to answer the user's question. "
-                    "If the answer is found in the context, cite the source document name. "
+                    "If the answer is found in the context, cite the source document name AND page number. "
                     "If the answer is NOT in the context, say so.\n\n"
                     "FORMATTING:\n"
                     "- Use Markdown.\n"
@@ -117,10 +117,24 @@ class DocumentAgent:
                     "- When summarizing, keep it structured."
                 )
 
-        prompt = f"{system_instruction}\n\nUSER QUESTION: {user_query}\n\nCONTEXT:\n{context}"
+        # Build Prompt with History
+        # We include the last few turns to allow follow-up questions
+        history_text = ""
+        # Get last 3 turns (excluding current)
+        recent_history = self.chat_history[-4:-1] 
+        if recent_history:
+            history_text = "CHAT HISTORY:\n"
+            for msg in recent_history:
+                history_text += f"{msg['role'].upper()}: {msg['content']}\n"
+            history_text += "\n"
+
+        prompt = f"{system_instruction}\n\n{history_text}USER QUESTION: {user_query}\n\nCONTEXT:\n{context}"
         
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            response_obj = self.model.generate_content(prompt)
+            response_text = response_obj.text
+            # Append assistant response to history
+            self.chat_history.append({"role": "assistant", "content": response_text})
+            return response_text
         except Exception as e:
             return f"Error generating answer: {e}"

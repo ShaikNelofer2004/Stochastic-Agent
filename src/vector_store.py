@@ -78,8 +78,10 @@ class SimpleVectorStore:
             "documents": self.documents,
             "metadatas": self.metadatas
         }
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # Ensure directory exists if path contains one
+        dirname = os.path.dirname(path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         with open(path, "wb") as f:
             pickle.dump(data, f)
         print(f"Vector store saved to {path}")

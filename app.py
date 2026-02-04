@@ -56,10 +56,11 @@ with st.sidebar:
             
             # Process
             try:
-                process_pdfs(temp_paths)
+                # clear_existing=True ensures that we only query the currently uploaded files
+                process_pdfs(temp_paths, clear_existing=True)
                 # Reload agent's store
                 st.session_state.agent = DocumentAgent() 
-                st.success(f"Successfully ingested {len(uploaded_files)} documents!")
+                st.success(f"Successfully ingested {len(uploaded_files)} documents! (Previous knowledge cleared)")
             except Exception as e:
                 st.error(f"Error during ingestion: {e}")
 
@@ -90,9 +91,13 @@ if prompt := st.chat_input("Ask a question about the documents..."):
         st.markdown(prompt)
 
     # Assistant response
+    import time
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
+            start_time = time.time()
             response = st.session_state.agent.ask(prompt)
+            end_time = time.time()
             st.markdown(response)
+            st.caption(f"⏱️ Response generated in {end_time - start_time:.2f} seconds")
             
     st.session_state.messages.append({"role": "assistant", "content": response})
