@@ -6,7 +6,7 @@ A lightweight, enterprise-ready AI agent for Document Q&A, built with Python, St
 
 - **📄 Document Ingestion**: Handles multiple PDF documents with structure preservation (Tables, Headers).
 - **🧠 Advanced RAG**: Uses custom NumPy-based Vector Store for lightweight, local retrieval.
-- **🤖 Multi-modal LLM**: Powered by Google Gemini 1.5 Flash.
+- **🤖 Multi-modal LLM**: Powered by Google Gemini 3 Flash.
 - **🔍 Arxiv Integration**: Agent can autonomously search for research papers.
 - **🏢 Enterprise-Ready**: Clean UI, source citations, and modular architecture.
 
