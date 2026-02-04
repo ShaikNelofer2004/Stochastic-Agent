@@ -66,6 +66,36 @@ Stochastic/
 
 The application checks follow a modular RAG (Retrieval-Augmented Generation) pipeline:
 
+```mermaid
+graph TD
+    subgraph Ingestion["1. Ingestion Layer"]
+        PDF[PDF Docs] -->|PyMuPDF4LLM| Parse[Markdown Text]
+        Parse -->|Recursive Splitter| Chunk[Text Chunks]
+        Chunk -->|Gemini Embeddings| Vector[Vectors]
+    end
+
+    subgraph Storage["2. Storage Layer"]
+        Vector -->|NumPy| Store[(Vector Store)]
+        Store <-->|Pickle| Disk[Disk Storage]
+    end
+
+    subgraph Agent["3. Agentic Logic"]
+        Query[User Query] --> Router{Router}
+        Router -->|Local| Retrieve[Retrieval]
+        Router -->|External| Web[Arxiv Search]
+        Retrieve <--> Store
+        Retrieve --> Citation[Citation Engine]
+        Citation --> LLM[Gemini LLM]
+        Web --> LLM
+    end
+
+    subgraph App["4. Application Layer"]
+        User((User)) <-->|Streamlit| UI[Interface]
+        UI <--> Query
+        LLM --> UI
+    end
+```
+
 ### 1. Ingestion Layer (`src/ingest_data.py`)
 - **PDF Parsing**: Uses `PyMuPDF4LLM` to extract text while preserving structural elements like headers and tables, converting them to Markdown.
 - **Chunking**: Implements a recursive text splitter that intelligently divides text by paragraphs and newlines to maintain semantic coherence.
