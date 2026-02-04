@@ -47,11 +47,40 @@ A lightweight, enterprise-ready AI agent for Document Q&A, built with Python, St
    - Example directly from docs: *"What is the methodology?"* -> *"According to Paper X (Page 4)..."*
    - Example from Arxiv: *"Find papers about Agentic AI"* (The agent will switch tools automatically).
 
+## Project Directory
+
+```text
+Stochastic/
+├── app.py               # Main application entry point (Streamlit)
+├── .env                 # Environment variables (API Keys)
+├── requirements.txt     # Python dependencies
+├── vector_store.pkl     # (Generated) Local vector database file
+├── src/
+│   ├── agent.py         # Main agent logic and tool routing
+│   ├── ingest_data.py   # PDF parsing, chunking, and embedding logic
+│   └── vector_store.py  # Custom NumPy-based vector store implementation
+└── README.md            # Project documentation
+```
+
 ## Architecture
 
-- **Frontend**: Streamlit (Enterprise-styled)
-- **Vector Store**: Custom `SimpleVectorStore` (NumPy)
-- **Embedding**: Gemini Text Embedding 004
-- **LLM**: Gemini 3 Flash
-- **PDF Engine**: PyMuPDF4LLM (Structure-aware)
+The application checks follow a modular RAG (Retrieval-Augmented Generation) pipeline:
+
+### 1. Ingestion Layer (`src/ingest_data.py`)
+- **PDF Parsing**: Uses `PyMuPDF4LLM` to extract text while preserving structural elements like headers and tables, converting them to Markdown.
+- **Chunking**: Implements a recursive text splitter that intelligently divides text by paragraphs and newlines to maintain semantic coherence.
+- **Embedding**: Generates vector embeddings for each chunk using Google's `text-embedding-004` model.
+
+### 2. Storage Layer (`src/vector_store.py`)
+- **Vector Database**: A lightweight, persistent vector store built from scratch using `NumPy`.
+- **Persistence**: Serializes vectors and metadata to disk (`vector_store.pkl`) using Python's `pickle` module for fast reloading between sessions.
+
+### 3. Agentic Logic (`src/agent.py`)
+- **Router**: Analyzes user queries to dynamically switch between **Local RAG** (for uploaded docs) and **Arxiv Search** (for external research).
+- **Context Retrieval**: Performs cosine similarity search to find the top-k most relevant chunks.
+- **Citation Engine**: Automatically appends source filenames and page numbers to the retrieved context for accurate citations.
+
+### 4. Application Layer (`app.py`)
+- **Frontend**: A Streamlit interface designed with enterprise-grade aesthetics (custom CSS).
+- **Session Management**: Maintains chat history and agent state across multiple interaction turns.
 
