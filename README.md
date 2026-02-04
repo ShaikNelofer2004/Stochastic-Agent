@@ -4,11 +4,16 @@ A lightweight, enterprise-ready AI agent for Document Q&A, built with Python, St
 
 ## Features
 
+### � Enterprise Performance
+- **Custom Vector Engine**: Built on `NumPy` for lightning-fast cosine similarity (no heavyweight bloat).
+- **Multi-Turn Memory**: understands context in follow-up questions (e.g., "Summarize this paper" -> "Who wrote **it**?").
+- **Real-Time Latency Metrics**: Displays processing time for every interaction to ensure SLA compliance.
+- **Precise Citations**: Cites not just the document name, but the **exact page number** where information was found to establish trust.
+
+### 🧠 Core Capabilities
 - **📄 Document Ingestion**: Handles multiple PDF documents with structure preservation (Tables, Headers).
-- **🧠 Advanced RAG**: Uses custom NumPy-based Vector Store for lightweight, local retrieval.
-- **🤖 Multi-modal LLM**: Powered by Google Gemini 3 Flash.
-- **🔍 Arxiv Integration**: Agent can autonomously search for research papers.
-- **🏢 Enterprise-Ready**: Clean UI, source citations, and modular architecture.
+- **🤖 Multi-modal LLM**: Powered by **Google Gemini 3 Flash** (or recent Gemini variants).
+- **🔍 Arxiv Integration**: Agent autonomously switches tools to search for real-world research papers when asked.
 
 ## Setup Instructions
 
@@ -39,13 +44,14 @@ A lightweight, enterprise-ready AI agent for Document Q&A, built with Python, St
 
 1. **Upload**: Use the sidebar to upload PDF documents. Click "Ingest Documents".
 2. **Chat**: Ask questions about the documents.
-   - Example directly from docs: *"What is the methodology?"*
+   - Example directly from docs: *"What is the methodology?"* -> *"According to Paper X (Page 4)..."*
    - Example from Arxiv: *"Find papers about Agentic AI"* (The agent will switch tools automatically).
 
 ## Architecture
 
-- **Frontend**: Streamlit
+- **Frontend**: Streamlit (Enterprise-styled)
 - **Vector Store**: Custom `SimpleVectorStore` (NumPy)
 - **Embedding**: Gemini Text Embedding 004
-- **LLM**: Gemini 3 Flash
-- **PDF Engine**: PyMuPDF4LLM
+- **LLM**: Gemini 1.5/3 Flash
+- **PDF Engine**: PyMuPDF4LLM (Structure-aware)
+
